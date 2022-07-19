@@ -5,6 +5,9 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
 use DI\Container;
 
+$users = ['mike', 'mishel', 'adel', 'keks', 'kamila'];
+
+
 $container = new Container();
 $container->set('renderer', function () {
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates/');
@@ -18,8 +21,13 @@ $app->get('/', function ($request, $response) {
    return $response; 
 });
 
-$app->get('/users', function ($request, $response) {
-    return $response->write('GET /users');
+$app->get('/users', function ($request, $response, $args) use ($users) {
+    $term = htmlspecialchars($request->getQueryParam('term'));
+    $filteredUsers = array_filter($users, fn ($user) => str_contains($user, $term));
+    $params['users'] = $filteredUsers;
+    $params['term'] = $term;
+    
+    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 });
 
 $app->post('/users', function ($request, $response) {
@@ -28,7 +36,7 @@ $app->post('/users', function ($request, $response) {
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) {
-    $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
+    $params = ['id' => htmlspecialchars($args['id']), 'nickname' => 'user-' . htmlspecialchars($args['id'])];
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 });
 

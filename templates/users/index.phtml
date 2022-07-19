@@ -1,0 +1,10 @@
+<form action="/users" method="GET">
+    <input type='search' required name='term' value="<?= $term; ?>">
+    <input type='submit' value="Search">
+</form>
+
+<ul>
+<?php foreach ($users as $user) : ?>
+    <li><?= $user; ?></li>
+<?php endforeach; ?>
+</ul>
