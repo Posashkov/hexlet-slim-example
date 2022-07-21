@@ -5,6 +5,6 @@
 
 <ul>
 <?php foreach ($users as $user) : ?>
-    <li><?= $user; ?></li>
+    <li><a href="/users/<?= $user['id']; ?>"><?= $user['nickname']; ?></a></li>
 <?php endforeach; ?>
 </ul>
