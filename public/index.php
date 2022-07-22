@@ -68,8 +68,20 @@ $app->post('/users', function ($request, $response) use ($users, $router) {
     return $this->get('renderer')->render($response->withStatus(422), 'users/new.phtml', $params);
 })->setName('users.store');
 
-$app->get('/users/{id:[0-9]+}', function ($request, $response, $args) {
-    $params = ['id' => htmlspecialchars($args['id']), 'nickname' => 'user-' . htmlspecialchars($args['id'])];
+$app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($users, $router) {
+    $id = htmlspecialchars($args['id']);
+    
+    $user = array_filter($users, fn ($user) => $user['id'] == $id);
+    
+    if (!$user) {
+        $response->getBody()->write('User not found');
+        return $response->withStatus(404);
+    }
+   
+    $params = [
+        'user' => reset($user),
+        'routeUserIndex' => $router->urlFor('users.index'),
+    ];
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('users.show');
 
