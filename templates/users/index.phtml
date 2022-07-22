@@ -1,10 +1,10 @@
-<form action="/users" method="GET">
+<form action="<?= $routeFormUserSearch; ?>" method="GET">
     <input type='search' required name='term' value="<?= $term; ?>">
     <input type='submit' value="Search">
 </form>
 
 <ul>
 <?php foreach ($users as $user) : ?>
-    <li><a href="/users/<?= $user['id']; ?>"><?= $user['nickname']; ?></a></li>
+    <li><a href="<?= $user['route']; ?>"><?= $user['nickname']; ?></a></li>
 <?php endforeach; ?>
 </ul>
