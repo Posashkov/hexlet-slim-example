@@ -4,7 +4,7 @@
     <div>
         <label>
             Nickname:
-            <input type="text" name="user[nickname]" value="<?= $user['nickname']; ?>">
+            <input type="text" required name="user[nickname]" value="<?= ($user['nickname']) ?? ''; ?>">
         </label>
         <?php if (isset($errors['nickname'])) : ?>
             <div><?= $errors['nickname']; ?></div>
@@ -13,7 +13,7 @@
     <div>
         <label>
             Email:
-            <input type="email" required name="user[email]" value="<?= $user['email']; ?>">
+            <input type="email" required name="user[email]" value="<?= ($user['email']) ?? ''; ?>">
         </label>
         <?php if (isset($errors['email'])) : ?>
             <div><?= $errors['email']; ?></div>

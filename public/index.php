@@ -102,7 +102,7 @@ $app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($user
 
 $app->get('/users/new', function ($request, $response) use ($router) {
     $params = [
-        'user' => ['nickname' => '', 'email' => ''],
+        'user' => [],
         'error' => [],
         'routeFormCreateUser' => $router->urlFor('users.index'),
     ];
