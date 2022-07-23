@@ -1,0 +1,33 @@
+<h1>Edit user</h1>
+
+<?php if (count($flash) > 0) : ?>
+    <?php foreach ($flash as $flashType => $flashMessages) : ?>
+    <div class="<?= $flashType; ?>"><?= implode('<br>', $flashMessages); ?></div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<form action="<?= $routeFormEditUser; ?>" method="POST">
+    <input type="hidden" name="_METHOD" value="PATCH">
+    <div>
+        <label>
+            Nickname:
+            <input type="text" name="user[nickname]" value="<?= ($user['nickname']) ?? ''; ?>">
+        </label>
+        <?php if (isset($errors['nickname'])) : ?>
+            <div><?= $errors['nickname']; ?></div>
+        <?php endif; ?>
+    </div>
+    <div>
+        <label>
+            Email:
+            <input type="email" name="user[email]" value="<?= ($user['email']) ?? ''; ?>">
+        </label>
+        <?php if (isset($errors['email'])) : ?>
+            <div><?= $errors['email']; ?></div>
+        <?php endif; ?>
+    </div>
+    <input type="submit" value="Update user">
+</form>
+
+<br>
+<a href="<?= $routeUserIndex; ?>">A list of users</a> 
