@@ -6,6 +6,8 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 use App\Validator;
 
+session_start();
+
 $users = [];
 if (($usersFromJson = file_get_contents(__DIR__ . '/../users.json')) !== false) {
     $users = json_decode($usersFromJson, true);
@@ -16,6 +18,10 @@ $container = new Container();
 $container->set('renderer', function () {
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates/');
 });
+$container->set('flash', function() {
+    return new \Slim\Flash\Messages();
+});
+
 
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
@@ -36,9 +42,16 @@ $app->get('/users', function ($request, $response, $args) use ($users, $router) 
         return $user;
     }, $filteredUsers);
     
-    $params['users'] = $filteredUsers;
-    $params['term'] = $term;
-    $params['routeFormUserSearch'] = $router->urlFor('users.index');
+
+    $messages = $this->get('flash')->getMessages();
+    
+    $params = [
+        'users' => $filteredUsers,
+        'term' => $term,
+        'routeFormUserSearch' => $router->urlFor('users.index'),
+        'flash' => $messages,    
+    ];
+    
     
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 })->setName('users.index');
@@ -57,9 +70,11 @@ $app->post('/users', function ($request, $response) use ($users, $router) {
         $users[] = $user;
         file_put_contents(__DIR__ . '/../users.json', json_encode($users));
 
+        $this->get('flash')->addMessage('success', 'User was added successfully');
+
         return $response->withRedirect($router->urlFor('users.index'), 302);        
     }
-    
+        
     $params = [
         'errors' => $errors,
         'user' => $user,

@@ -1,3 +1,11 @@
+<h1>Users</h1>
+
+<?php if (count($flash) > 0) : ?>
+    <?php foreach ($flash as $flashType => $flashMessages) : ?>
+    <div class="<?= $flashType; ?>"><?= implode('<br>', $flashMessages); ?></div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
 <form action="<?= $routeFormUserSearch; ?>" method="GET">
     <input type='search' required name='term' value="<?= $term; ?>">
     <input type='submit' value="Search">
