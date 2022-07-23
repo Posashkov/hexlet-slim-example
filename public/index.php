@@ -10,10 +10,9 @@ use App\Validator;
 session_start();
 
 $users = [];
-if (($usersFromJson = file_get_contents(__DIR__ . '/../users.json')) !== false) {
-    $users = json_decode($usersFromJson, true);
-}
-
+//if (($usersFromJson = file_get_contents(__DIR__ . '/../users.json')) !== false) {
+//    $users = json_decode($usersFromJson, true);
+//}
 
 $container = new Container();
 $container->set('renderer', function () {
@@ -35,8 +34,12 @@ $app->get('/', function ($request, $response) {
    return $response; 
 })->setName('index');
 
-$app->get('/users', function ($request, $response, $args) use ($users, $router) {
+
+$app->get('/users', function ($request, $response, $args) use ($router) {
     $term = htmlspecialchars($request->getQueryParam('term'));
+    
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+    
     $filteredUsers = array_filter($users, fn ($user) => str_contains(strtolower($user['nickname']), strtolower($term)));
     
     $filteredUsers = array_map(function ($user) use ($router) {
@@ -58,7 +61,8 @@ $app->get('/users', function ($request, $response, $args) use ($users, $router) 
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 })->setName('users.index');
 
-$app->post('/users', function ($request, $response) use ($users, $router) {
+
+$app->post('/users', function ($request, $response) use ($router) {
     $parsedUser = $request->getParsedBodyParam('user');
     $user = [
         'nickname' => htmlspecialchars($parsedUser['nickname']),
@@ -69,12 +73,15 @@ $app->post('/users', function ($request, $response) use ($users, $router) {
     $errors = (new Validator)->validate($user);
 
     if (count($errors) === 0) {
+        $users = json_decode($request->getCookieParam('users', json_encode([])), true);
         $users[] = $user;
-        file_put_contents(__DIR__ . '/../users.json', json_encode($users));
+        $encodedUsers = json_encode($users);
 
         $this->get('flash')->addMessage('success', 'User was added successfully');
 
-        return $response->withRedirect($router->urlFor('users.index'), 302);        
+        return $response
+            ->withHeader('Set-Cookie', "users={$encodedUsers}")
+            ->withRedirect($router->urlFor('users.index'), 302);        
     }
         
     $params = [
@@ -85,9 +92,11 @@ $app->post('/users', function ($request, $response) use ($users, $router) {
     return $this->get('renderer')->render($response->withStatus(422), 'users/new.phtml', $params);
 })->setName('users.store');
 
-$app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($users, $router) {
+
+$app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
     $id = htmlspecialchars($args['id']);
     
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     $user = array_filter($users, fn ($user) => $user['id'] == $id);
     
     if (!$user) {
@@ -102,6 +111,7 @@ $app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($user
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('users.show');
 
+
 $app->get('/users/new', function ($request, $response) use ($router) {
     $params = [
         'user' => [],
@@ -112,9 +122,11 @@ $app->get('/users/new', function ($request, $response) use ($router) {
     return $this->get('renderer')->render($response, 'users/new.phtml', $params);
 })->setName('users.create');
 
-$app->get('/users/{id:[0-9]+}/edit', function ($request, $response, $args) use ($users, $router) {
+
+$app->get('/users/{id:[0-9]+}/edit', function ($request, $response, $args) use ($router) {
     $id = htmlspecialchars($args['id']);
-    
+
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);    
     $user = array_filter($users, fn ($user) => $user['id'] == $id);
     
     if (!$user) {
@@ -134,7 +146,8 @@ $app->get('/users/{id:[0-9]+}/edit', function ($request, $response, $args) use (
     return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
 })->setName('users.edit');
 
-$app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($users, $router) {
+
+$app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
     $id = htmlspecialchars($args['id']);
    
     $parsedData = $request->getParsedBodyParam('user');
@@ -147,7 +160,8 @@ $app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($us
     $errors = (new Validator)->validate($parsedUser);
     
     if (count($errors) === 0) {
-
+        $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+    
         $updatedUsers = array_map(function ($user) use ($parsedUser) {
             if ($user['id'] == $parsedUser['id']) {            
                 $user['nickname'] = $parsedUser['nickname'];
@@ -155,11 +169,14 @@ $app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($us
             }
             return $user;            
         }, $users);
-        file_put_contents(__DIR__ . '/../users.json', json_encode($updatedUsers));
+        
+        $encodedUsers = json_encode($updatedUsers);
 
         $this->get('flash')->addMessage('success', 'User was updated successfully');
 
-        return $response->withRedirect($router->urlFor('users.edit', ['id' => $id]), 302);
+        return $response
+            ->withHeader('Set-Cookie', "users={$encodedUsers}")
+            ->withRedirect($router->urlFor('users.edit', ['id' => $id]), 302);
     }
     
     $params = [
@@ -172,16 +189,21 @@ $app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($us
     return $this->get('renderer')->render($response->withStatus(422), 'users/edit.phtml', $params);
 })->setName('users.update');
 
-$app->delete('/users/{id:[0-9]+}', function ($request, $response, $args) use ($users, $router) {
+
+$app->delete('/users/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
     $id = htmlspecialchars($args['id']);
+    
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
     
     $updatedUsers = array_filter($users, fn ($user) => $user['id'] != $id);
     
-    file_put_contents(__DIR__ . '/../users.json', json_encode($updatedUsers));
+    $encodedUsers = json_encode($updatedUsers);
 
     $this->get('flash')->addMessage('success', 'User has been deleted');
 
-    return $response->withRedirect($router->urlFor('users.index'), 302);    
+    return $response
+        ->withHeader('Set-Cookie', "users={$encodedUsers}")
+        ->withRedirect($router->urlFor('users.index'), 302);    
 })->setName('users.delete');
 
 $app->run();
