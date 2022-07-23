@@ -172,4 +172,16 @@ $app->patch('/users/{id:[0-9]+}', function ($request, $response, $args) use ($us
     return $this->get('renderer')->render($response->withStatus(422), 'users/edit.phtml', $params);
 })->setName('users.update');
 
+$app->delete('/users/{id:[0-9]+}', function ($request, $response, $args) use ($users, $router) {
+    $id = htmlspecialchars($args['id']);
+    
+    $updatedUsers = array_filter($users, fn ($user) => $user['id'] != $id);
+    
+    file_put_contents(__DIR__ . '/../users.json', json_encode($updatedUsers));
+
+    $this->get('flash')->addMessage('success', 'User has been deleted');
+
+    return $response->withRedirect($router->urlFor('users.index'), 302);    
+})->setName('users.delete');
+
 $app->run();

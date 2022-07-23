@@ -30,4 +30,11 @@
 </form>
 
 <br>
+
+<form action="<?= $routeFormEditUser; ?>" method="POST" onsubmit="if(!confirm('Do you really want to delete user?')){return false;}">
+    <input type="hidden" name="_METHOD" value="DELETE">
+    <input type="submit" value="Delete user">
+</form>
+
+<br>
 <a href="<?= $routeUserIndex; ?>">A list of users</a> 
