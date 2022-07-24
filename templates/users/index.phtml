@@ -5,14 +5,21 @@
     <div class="<?= $flashType; ?>"><?= implode('<br>', $flashMessages); ?></div>
     <?php endforeach; ?>
 <?php endif; ?>
+    
+<?php require('login.phtml'); ?>
 
-<form action="<?= $routeFormUserSearch; ?>" method="GET">
-    <input type='search' required name='term' value="<?= $term; ?>">
-    <input type='submit' value="Search">
-</form>
+<?php if ($isAuthorized) : ?>
+    <br>
+    <a href="<?= $routeAddNewUser; ?>">Add new user</a>
 
-<ul>
-<?php foreach ($users as $user) : ?>
-    <li><a href="<?= $user['route']; ?>"><?= $user['nickname']; ?></a></li>
-<?php endforeach; ?>
-</ul>
+    <form action="<?= $routeFormUserSearch; ?>" method="GET">
+        <input type='search' required name='term' value="<?= $term; ?>">
+        <input type='submit' value="Search">
+    </form>
+
+    <ul>
+    <?php foreach ($users as $user) : ?>
+        <li><a href="<?= $user['route']; ?>"><?= $user['nickname']; ?></a></li>
+    <?php endforeach; ?>
+    </ul>
+<?php endif; ?>

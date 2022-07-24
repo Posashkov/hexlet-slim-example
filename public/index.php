@@ -9,10 +9,9 @@ use App\Validator;
 
 session_start();
 
-$users = [];
-//if (($usersFromJson = file_get_contents(__DIR__ . '/../users.json')) !== false) {
-//    $users = json_decode($usersFromJson, true);
-//}
+if (!isset($_SESSION['isAuthorized'])) {
+    $_SESSION['isAuthorized'] = false;
+}
 
 $container = new Container();
 $container->set('renderer', function () {
@@ -54,7 +53,10 @@ $app->get('/users', function ($request, $response, $args) use ($router) {
         'users' => $filteredUsers,
         'term' => $term,
         'routeFormUserSearch' => $router->urlFor('users.index'),
-        'flash' => $messages,    
+        'routeAddNewUser' => $router->urlFor('users.create'),
+        'flash' => $messages,
+        'isAuthorized' => $_SESSION['isAuthorized'],
+        'routeFormLogin' => $router->urlFor('session.store'),
     ];
     
     
@@ -94,6 +96,12 @@ $app->post('/users', function ($request, $response) use ($router) {
 
 
 $app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
+    if (!$_SESSION['isAuthorized']) {
+        $this->get('flash')->addMessage('error', 'Access denied. Please log in.');
+
+        return $response->withRedirect($router->urlFor('users.index'), 302);
+    }
+
     $id = htmlspecialchars($args['id']);
     
     $users = json_decode($request->getCookieParam('users', json_encode([])), true);
@@ -113,6 +121,12 @@ $app->get('/users/{id:[0-9]+}', function ($request, $response, $args) use ($rout
 
 
 $app->get('/users/new', function ($request, $response) use ($router) {
+    if (!$_SESSION['isAuthorized']) {
+        $this->get('flash')->addMessage('error', 'Access denied. Please log in.');
+
+        return $response->withRedirect($router->urlFor('users.index'), 302);
+    }
+
     $params = [
         'user' => [],
         'error' => [],
@@ -124,6 +138,12 @@ $app->get('/users/new', function ($request, $response) use ($router) {
 
 
 $app->get('/users/{id:[0-9]+}/edit', function ($request, $response, $args) use ($router) {
+    if (!$_SESSION['isAuthorized']) {
+        $this->get('flash')->addMessage('error', 'Access denied. Please log in.');
+
+        return $response->withRedirect($router->urlFor('users.index'), 302);
+    }
+
     $id = htmlspecialchars($args['id']);
 
     $users = json_decode($request->getCookieParam('users', json_encode([])), true);    
@@ -205,5 +225,27 @@ $app->delete('/users/{id:[0-9]+}', function ($request, $response, $args) use ($r
         ->withHeader('Set-Cookie', "users={$encodedUsers}")
         ->withRedirect($router->urlFor('users.index'), 302);    
 })->setName('users.delete');
+
+
+$app->post('/session', function ($request, $response) use ($router) {
+    $login = htmlspecialchars($request->getParsedBodyParam('login'));
+    
+    if ($login === 'login@localhost') {
+        $_SESSION['isAuthorized'] = true;
+        $this->get('flash')->addMessage('success', 'User was successfully authorized');
+    } else {
+        $this->get('flash')->addMessage('error', 'Autorisation error');
+    }
+    
+    return $response->withRedirect($router->urlFor('users.index'), 302);
+})->setName('session.store');
+
+
+$app->delete('/session', function ($request, $response) use ($router) {
+    $_SESSION = [];
+    session_destroy();
+
+    return $response->withRedirect($router->urlFor('users.index'), 302);
+})->setName('session.delete');
 
 $app->run();
